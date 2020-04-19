@@ -1,0 +1,40 @@
+from flask import Flask
+from flask import render_template
+from flask import request
+
+import re
+from collections import Counter
+
+app = Flask(__name__)
+
+
+@app.route('/', methods=['POST', 'GET'])
+def index():
+    if request.method == 'POST':
+        txt = read_file()
+
+        ban = get_ban_list(txt)
+
+        return render_template('index.html', ips=ban)
+    return render_template('index.html')
+
+
+def read_file():
+    f = request.files['file'].read()
+    txt = str(f, 'utf-8')
+    return txt
+
+
+def get_ban_list(txt):
+    pattern = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
+    ips = re.findall(pattern, txt)
+    result = Counter(ips).most_common(10)
+    ban = []
+    for key, value in result:
+        if value > 100:
+            ban.append({'ip': key, 'frequency': value})
+    return ban
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
